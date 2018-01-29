@@ -50,9 +50,9 @@ type Action struct {
 }
 
 /*
-ComparatorCondition compare
+StringComparatorCondition compares string
 */
-type ComparatorCondition struct {
+type StringComparatorCondition struct {
 	Path     string
 	Operator string
 	Value    string
@@ -61,7 +61,7 @@ type ComparatorCondition struct {
 /*
 IsMet verifies whether the condition is met
 */
-func (comparator *ComparatorCondition) IsMet(currentEntityJSON *string) (bool, error) {
+func (comparator *StringComparatorCondition) IsMet(currentEntityJSON *string) (bool, error) {
 	result := gjson.Get(*currentEntityJSON, comparator.Path)
 	switch result.Type {
 	case gjson.Null:
@@ -80,7 +80,7 @@ func (comparator *ComparatorCondition) IsMet(currentEntityJSON *string) (bool, e
 	return false, errors.New("Unidentified type")
 }
 
-func compareString(comparator *ComparatorCondition, value string) (bool, error) {
+func compareString(comparator *StringComparatorCondition, value string) (bool, error) {
 	switch comparator.Operator {
 	case Equal:
 		if comparator.Value == value {

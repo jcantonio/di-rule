@@ -12,7 +12,7 @@ var jsonStr1 = `{
 		"name": "DoThis"
 	}],
 	"condition": {
-		"op": "OR",
+		"op": "or",
 		"conditions": [
 			{
 				"path": "shipTo.countryCode",
@@ -36,7 +36,7 @@ var jsonStr2 = `{
 		"name": "DoThis"
 	}],
 	"condition": {
-		"op": "OR",
+		"op": "or",
 		"conditions": [
 			{
 				"path": "shipTo.countryCode",

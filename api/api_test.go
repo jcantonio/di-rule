@@ -16,7 +16,7 @@ func TestCreate(t *testing.T) {
 			"name": "DoThis"
 		},
 		"condition": {
-			"op": "OR",
+			"op": "or",
 			"conditions": [
 				{
 					"path": "shipTo.countryCode",

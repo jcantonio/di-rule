@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/google/uuid"
 	dirule "github.com/jcantonio/di-rule"
+	"github.com/jcantonio/di-rule/converter"
 	"github.com/jcantonio/di-rule/db"
 )
 
@@ -72,24 +74,71 @@ func LoadRules() error {
 	return nil
 }
 
+func getDoc(jsonDoc []byte) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+	err := json.Unmarshal(jsonDoc, &result)
+	if err != nil {
+		return result, err
+	}
+	if _, ok := result["error"]; ok {
+		reason := result["reason"].(string)
+		return result, errors.New(reason)
+	}
+	return result, nil
+}
+
 func CreateRule(json []byte) (string, string, error) {
-	//Validate
-	_, err := validateRule(json)
+	doc, err := getDoc(json)
 	if err != nil {
 		return "", "", err
 	}
-	return db.CreateRule(json)
+
+	id := uuid.New().String()
+
+	//create and Validate Rule
+	rule, err := converter.GetRule(doc)
+
+	if err != nil {
+		return "", "", err
+	}
+	// Store
+	ver, err := db.CreateRule(id, doc)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	// Update Cache
+	rulesInMem[rule.Entity][rule.Name] = rule
+
+	return id, ver, err
 }
 
 func UpdateRule(id string, rev1 string, json []byte) (string, error) {
-	_, err := validateRule(json)
+	doc, err := getDoc(json)
 	if err != nil {
 		return "", err
 	}
-	return db.UpdateRule(id, rev1, json)
-}
-func validateRule(json []byte) (bool, error) {
-	return true, nil
+
+	doc["_rev"] = rev1
+
+	//create and Validate Rule
+	rule, err := converter.GetRule(doc)
+
+	if err != nil {
+		return "", err
+	}
+	// Store
+	ver, err := db.UpdateRule(id, doc)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Update Cache
+	rulesInMem[rule.Entity][rule.Name] = rule
+
+	return ver, err
 }
 
 func GetRules(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]dirule.Rule, error) {
@@ -103,85 +152,13 @@ func GetRules(fields []string, selector string, sorts []string, limit, skip, ind
 	}
 	rules := []dirule.Rule{}
 	for _, ruleMap := range rulesMap {
-		rule, err := GetRule(ruleMap)
+		rule, err := converter.GetRule(ruleMap)
 		if err != nil {
 			return nil, err
 		}
 		rules = append(rules, rule)
 	}
 	return rules, nil
-}
-func GetRule(ruleMap map[string]interface{}) (dirule.Rule, error) {
-	var rule dirule.Rule
-	name := ruleMap["name"].(string)
-	entity := ruleMap["entity"].(string)
-	actions := []dirule.Action{}
-
-	conditionMap := ruleMap["condition"]
-
-	condition, err := getCondition(conditionMap.(map[string]interface{}))
-	if err != nil {
-		return rule, err
-	}
-
-	rule = dirule.Rule{
-		Name:      name,
-		Entity:    entity,
-		Actions:   actions,
-		Condition: condition,
-	}
-
-	return rule, nil
-}
-
-func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error) {
-	operation := conditionMap["op"]
-	if operation == nil {
-		return nil, errors.New("No op found")
-	}
-	switch operation {
-	case "or", "and", "OR", "AND":
-		condition := &dirule.LogicalCondition{
-			Operator: operation.(string)}
-
-		subconditions := conditionMap["conditions"].([]interface{})
-		for _, subcondition := range subconditions {
-			subconditionMap := subcondition.(map[string]interface{})
-			subcondition, err := getCondition(subconditionMap)
-			if err != nil {
-				return nil, err
-			}
-			condition.Add(subcondition)
-		}
-		return condition, nil
-	}
-
-	path := conditionMap["path"]
-	value := conditionMap["value"]
-
-	/*
-		switch v := value.(type) {
-		case int:
-			// v is an int here, so e.g. v + 1 is possible.
-			fmt.Printf("Integer: %v", v)
-		case float64:
-			// v is a float64 here, so e.g. v + 1.0 is possible.
-			fmt.Printf("Float64: %v", v)
-		case string:
-			// v is a string here, so e.g. v + " Yeah!" is possible.
-			fmt.Printf("String: %v", v)
-		default:
-			// And here I'm feeling dumb. ;)
-			fmt.Printf("I don't know, ask stackoverflow.")
-		}
-	*/
-
-	condition := &dirule.ComparatorCondition{
-		Path:     path.(string),
-		Operator: operation.(string),
-		Value:    value.(string),
-	}
-	return condition, nil
 }
 func GetRulesAsJSON(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]byte, error) {
 
