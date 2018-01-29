@@ -62,7 +62,8 @@ func ProcessRules(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	entityJSON := string(body)
-	command.ProcessRules(&entityType, &entityJSON, command.ExecuteActions)
+	execActions := command.ExecuteActions{}
+	command.ProcessRules(&entityType, &entityJSON, &execActions)
 }
 func GetRules(w http.ResponseWriter, r *http.Request) {
 	/*
@@ -116,7 +117,7 @@ func CreateRule(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	var id string
-	id, rev, err = db.CreateRule(body)
+	id, rev, err = command.CreateRule(body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -141,7 +142,7 @@ func UpdateRule(w http.ResponseWriter, r *http.Request) {
 
 	revResult := gjson.Get(string(body), "_rev")
 	rev1 = revResult.String()
-	rev2, err = db.UpdateRule(id, rev1, body)
+	rev2, err = command.UpdateRule(id, rev1, body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}

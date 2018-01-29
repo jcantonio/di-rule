@@ -1,7 +1,7 @@
 # di-rule
 A Go Rules Engine
 
-# Work in Progress, NOT Ready to be used yet
+## Work in Progress, NOT Ready to be used yet
 
 Project from a Golang learner. Please give feedbacks. 
 
@@ -19,7 +19,7 @@ Input json entity
 go get -u github.com/jcantonio/di-rule
 ```
 
-# Roadmap
+## Roadmap
 * string comparator: equal        	- DONE
 * logical comparators: And        	- DONE
 * logical comparators: Or         	- DONE

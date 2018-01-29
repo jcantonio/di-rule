@@ -116,13 +116,11 @@ func (buffer *Buffer) AddResult(result gjson.Result) {
 		case gjson.JSON:
 			if value.IsArray() {
 				// Array
-				s := len(value.Array())
-				subElements := make([]map[string]interface{}, s)
-
-				for index, subResult := range value.Array() {
+				var subElements []map[string]interface{}
+				for _, subResult := range value.Array() {
 					subBuffer := Buffer{}
 					subBuffer.AddResult(subResult)
-					subElements[index] = subBuffer.records
+					subElements = append(subElements, subBuffer.records)
 				}
 				buffer.records[attrName] = subElements
 			} else {

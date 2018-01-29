@@ -8,7 +8,7 @@ import (
 	"github.com/jcantonio/di-rule/db"
 )
 
-func TestGetRulesAsObjects(t *testing.T) {
+func TestGetRules(t *testing.T) {
 
 	db.InitDatabase("http://localhost:5984", "di-rule")
 
@@ -17,10 +17,10 @@ func TestGetRulesAsObjects(t *testing.T) {
 	selector = `_id > nil`
 
 	t.Run("TEST1", func(t *testing.T) {
-		rules, err := GetRulesAsObjects(nil, selector, nil, nil, nil, nil)
+		rules, err := GetRules(nil, selector, nil, nil, nil, nil)
 		println(rules)
 		if err != nil {
-			t.Errorf("GetRulesAsObjects() error = %v", err)
+			t.Errorf("GetRules() error = %v", err)
 			return
 		}
 	})
@@ -41,13 +41,13 @@ func TestGetRuleAsObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetRuleAsObject(tt.args.ruleMap)
+			got, err := GetRule(tt.args.ruleMap)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRuleAsObject() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetRule() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetRuleAsObject() = %v, want %v", got, tt.want)
+				t.Errorf("GetRule() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -67,13 +67,13 @@ func TestGetConditionAsObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetConditionAsObject(tt.args.conditionMap)
+			got, err := getCondition(tt.args.conditionMap)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetConditionAsObject() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getCondition() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetConditionAsObject() = %v, want %v", got, tt.want)
+				t.Errorf("getCondition() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -81,7 +81,6 @@ func TestGetConditionAsObject(t *testing.T) {
 
 func TestLoadRules(t *testing.T) {
 	db.InitDatabase("http://localhost:5984", "di-rule")
-
 	if err := LoadRules(); err != nil {
 		t.Errorf("LoadRules() error = %v", err)
 	}

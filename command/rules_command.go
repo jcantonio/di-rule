@@ -10,10 +10,10 @@ import (
 
 var rulesInMem map[string](map[string]dirule.Rule)
 
-type ExecuteRule func(rule *dirule.Rule, entityJSON *string) (interface{}, error)
+type ExecuteRule func(rule *dirule.Rule, entityJSON *string) error
 
 type Action interface {
-	Execute(rule *dirule.Rule, entityJSON *string) (interface{}, error)
+	Execute(rule *dirule.Rule, entityJSON *string) error
 }
 
 type ExecuteActions struct {
@@ -25,6 +25,7 @@ type ExecuteGatherRules struct {
 
 func (exe *ExecuteActions) Execute(rule *dirule.Rule, entityJSON *string) error {
 	println("PASSED", rule.Name)
+
 	return nil
 }
 func (exe *ExecuteGatherRules) Execute(rule *dirule.Rule, entityJSON *string) error {
@@ -49,13 +50,11 @@ func ProcessRules(entityType *string, entityJSON *string, action Action) error {
 }
 
 func LoadRules() error {
-
 	if rulesInMem == nil {
 		rulesInMem = make(map[string](map[string]dirule.Rule))
 	}
-
 	selector := `_id > nil`
-	rules, err := GetRulesAsObjects(nil, selector, nil, nil, nil, nil)
+	rules, err := GetRules(nil, selector, nil, nil, nil, nil)
 
 	for _, rule := range rules {
 		rulesPerEntity := rulesInMem[rule.Entity]
@@ -73,7 +72,27 @@ func LoadRules() error {
 	return nil
 }
 
-func GetRulesAsObjects(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]dirule.Rule, error) {
+func CreateRule(json []byte) (string, string, error) {
+	//Validate
+	_, err := validateRule(json)
+	if err != nil {
+		return "", "", err
+	}
+	return db.CreateRule(json)
+}
+
+func UpdateRule(id string, rev1 string, json []byte) (string, error) {
+	_, err := validateRule(json)
+	if err != nil {
+		return "", err
+	}
+	return db.UpdateRule(id, rev1, json)
+}
+func validateRule(json []byte) (bool, error) {
+	return true, nil
+}
+
+func GetRules(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]dirule.Rule, error) {
 
 	var rulesMap []map[string]interface{}
 	var err error
@@ -84,16 +103,15 @@ func GetRulesAsObjects(fields []string, selector string, sorts []string, limit, 
 	}
 	rules := []dirule.Rule{}
 	for _, ruleMap := range rulesMap {
-		rule, err := GetRuleAsObject(ruleMap)
+		rule, err := GetRule(ruleMap)
 		if err != nil {
 			return nil, err
 		}
 		rules = append(rules, rule)
 	}
-
 	return rules, nil
 }
-func GetRuleAsObject(ruleMap map[string]interface{}) (dirule.Rule, error) {
+func GetRule(ruleMap map[string]interface{}) (dirule.Rule, error) {
 	var rule dirule.Rule
 	name := ruleMap["name"].(string)
 	entity := ruleMap["entity"].(string)
@@ -101,7 +119,7 @@ func GetRuleAsObject(ruleMap map[string]interface{}) (dirule.Rule, error) {
 
 	conditionMap := ruleMap["condition"]
 
-	condition, err := GetConditionAsObject(conditionMap.(map[string]interface{}))
+	condition, err := getCondition(conditionMap.(map[string]interface{}))
 	if err != nil {
 		return rule, err
 	}
@@ -116,7 +134,7 @@ func GetRuleAsObject(ruleMap map[string]interface{}) (dirule.Rule, error) {
 	return rule, nil
 }
 
-func GetConditionAsObject(conditionMap map[string]interface{}) (dirule.Condition, error) {
+func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error) {
 	operation := conditionMap["op"]
 	if operation == nil {
 		return nil, errors.New("No op found")
@@ -129,7 +147,7 @@ func GetConditionAsObject(conditionMap map[string]interface{}) (dirule.Condition
 		subconditions := conditionMap["conditions"].([]interface{})
 		for _, subcondition := range subconditions {
 			subconditionMap := subcondition.(map[string]interface{})
-			subcondition, err := GetConditionAsObject(subconditionMap)
+			subcondition, err := getCondition(subconditionMap)
 			if err != nil {
 				return nil, err
 			}
