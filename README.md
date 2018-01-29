@@ -1,6 +1,8 @@
 # di-rule
 A Go Rules Engine
 
+# Work in Progress, NOT Ready to be used yet
+
 Project from a Golang learner. Please give feedbacks. 
 
 Create Rules based on Conditions (Condition) which can be
@@ -18,12 +20,15 @@ go get -u github.com/jcantonio/di-rule
 ```
 
 # Roadmap
-string comparator: equal        - DONE
-logical comparators: And        - DONE
-logical comparators: Or         - DONE
-string comparator: regex        - DONE
-nil comparator
-number comparator: equal
-number comparator: greater
-number comparator: less
-REST : Add Rule
+* string comparator: equal        	- DONE
+* logical comparators: And        	- DONE
+* logical comparators: Or         	- DONE
+* string comparator: regex        	- DONE
+
+* nil comparator
+* number comparator: equal
+* number comparator: greater
+* number comparator: less
+* compare when changes
+* REST : Add Rule in CouchDB	  	- PART 
+* REST : Execute Rule				- PART

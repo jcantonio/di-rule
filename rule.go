@@ -13,7 +13,7 @@ const (
 	// Or is the Logical Operator Or
 	Or = "or"
 	//Equal is the Equal value comparator
-	Equal = "eq"
+	Equal = "="
 	//Regexp is the Equal value comparator
 	Regexp = "regexp"
 	// Greater is the Greater value comparator
@@ -36,9 +36,17 @@ type Condition interface {
 Rule compare
 */
 type Rule struct {
-	ID        string
+	Name      string
+	Entity    string
 	Condition Condition
-	Action    string
+	Actions   []Action
+}
+
+/*
+Action TBD
+*/
+type Action struct {
+	Name string
 }
 
 /*

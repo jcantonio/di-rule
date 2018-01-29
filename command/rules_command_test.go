@@ -1,0 +1,88 @@
+package command
+
+import (
+	"reflect"
+	"testing"
+
+	dirule "github.com/jcantonio/di-rule"
+	"github.com/jcantonio/di-rule/db"
+)
+
+func TestGetRulesAsObjects(t *testing.T) {
+
+	db.InitDatabase("http://localhost:5984", "di-rule")
+
+	selector := `entity == "CUSTOMER"`
+
+	selector = `_id > nil`
+
+	t.Run("TEST1", func(t *testing.T) {
+		rules, err := GetRulesAsObjects(nil, selector, nil, nil, nil, nil)
+		println(rules)
+		if err != nil {
+			t.Errorf("GetRulesAsObjects() error = %v", err)
+			return
+		}
+	})
+
+}
+
+func TestGetRuleAsObject(t *testing.T) {
+	type args struct {
+		ruleMap map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    dirule.Rule
+		wantErr bool
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetRuleAsObject(tt.args.ruleMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRuleAsObject() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetRuleAsObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetConditionAsObject(t *testing.T) {
+	type args struct {
+		conditionMap map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    dirule.Condition
+		wantErr bool
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetConditionAsObject(tt.args.conditionMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetConditionAsObject() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetConditionAsObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLoadRules(t *testing.T) {
+	db.InitDatabase("http://localhost:5984", "di-rule")
+
+	if err := LoadRules(); err != nil {
+		t.Errorf("LoadRules() error = %v", err)
+	}
+}
