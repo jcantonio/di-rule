@@ -2,7 +2,6 @@ package converter
 
 import (
 	"errors"
-	"fmt"
 
 	dirule "github.com/jcantonio/di-rule"
 )
@@ -59,14 +58,13 @@ func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error)
 	path := conditionMap["path"]
 	value := conditionMap["value"]
 
-	switch v := value.(type) {
+	switch value.(type) {
 	case int, float64:
 		condition := &dirule.NumberComparatorCondition{
 			Path:     path.(string),
 			Operator: operation.(string),
 			Value:    value.(float64),
 		}
-		fmt.Printf("Interger/Float64: %v", v)
 		return condition, nil
 	case string:
 		condition := &dirule.StringComparatorCondition{
@@ -74,11 +72,7 @@ func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error)
 			Operator: operation.(string),
 			Value:    value.(string),
 		}
-		fmt.Printf("String: %v", v)
 		return condition, nil
-	default:
-		// And here I'm feeling dumb. ;)
-		fmt.Printf("I don't know, ask stackoverflow.")
 	}
 
 	return nil, errors.New("Type not handled yet")
