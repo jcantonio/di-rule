@@ -23,12 +23,15 @@ go get -u github.com/jcantonio/di-rule
 * string comparator: equal        	- DONE
 * logical comparators: And        	- DONE
 * logical comparators: Or         	- DONE
+* string comparator: equal        	- DONE
 * string comparator: regex        	- DONE
-
+* number comparator: equal        	- DONE
+* number comparator: greater        - DONE
+* number comparator: less        	- DONE
 * nil comparator
-* number comparator: equal
-* number comparator: greater
-* number comparator: less
+* date comparator: equal         
+* date comparator: greater        
+* date comparator: less        	
 * compare when changes
 * REST : Add Rule in CouchDB	  	- PART 
 * REST : Execute Rule				- PART
