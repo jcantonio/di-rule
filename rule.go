@@ -2,6 +2,7 @@ package dirule
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/tidwall/gjson"
@@ -19,7 +20,7 @@ const (
 	// Greater is the Greater value comparator
 	Greater = ">"
 	// Lesser is the Lesser value comparator
-	Lesser = "<"
+	Less = "<"
 	// Nil is the Greater value comparator
 	Nil = "nil"
 )
@@ -63,34 +64,46 @@ IsMet verifies whether the condition is met
 */
 func (comparator *StringComparatorCondition) IsMet(currentEntityJSON *string) (bool, error) {
 	result := gjson.Get(*currentEntityJSON, comparator.Path)
-	switch result.Type {
-	case gjson.Null:
-		return false, errors.New("Not implemented")
-	case gjson.True:
-		return false, errors.New("Not implemented")
-	case gjson.False:
-		return false, errors.New("Not implemented")
-	case gjson.JSON:
-		return false, errors.New("Not implemented")
-	case gjson.String:
-		return compareString(comparator, result.Str)
-	case gjson.Number:
-		return false, errors.New("Not implemented")
+
+	if result.Type == gjson.String {
+		switch comparator.Operator {
+		case Equal:
+			return comparator.Value == result.Str, nil
+		case Regexp:
+			return regexp.MatchString(comparator.Value, result.Str)
+		}
+		return false, fmt.Errorf("Unidentified Operator %s", comparator.Operator)
 	}
-	return false, errors.New("Unidentified type")
+	return false, fmt.Errorf("Unidentified Type %s", result.Type)
 }
 
-func compareString(comparator *StringComparatorCondition, value string) (bool, error) {
-	switch comparator.Operator {
-	case Equal:
-		if comparator.Value == value {
-			return true, nil
+/*
+NumberComparatorCondition compares number
+*/
+type NumberComparatorCondition struct {
+	Path     string
+	Operator string
+	Value    float64
+}
+
+/*
+IsMet verifies whether the condition is met
+*/
+func (comparator *NumberComparatorCondition) IsMet(currentEntityJSON *string) (bool, error) {
+	result := gjson.Get(*currentEntityJSON, comparator.Path)
+
+	if result.Type == gjson.Number {
+		switch comparator.Operator {
+		case Equal:
+			return result.Num == comparator.Value, nil
+		case Greater:
+			return result.Num > comparator.Value, nil
+		case Less:
+			return result.Num < comparator.Value, nil
 		}
-		return false, nil
-	case Regexp:
-		return regexp.MatchString(comparator.Value, value)
+		return false, fmt.Errorf("Unidentified Operator %s", comparator.Operator)
 	}
-	return false, errors.New("Unidentified Comp")
+	return false, fmt.Errorf("Unidentified Type %s", result.Type)
 }
 
 /*

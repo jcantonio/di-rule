@@ -60,12 +60,14 @@ func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error)
 	value := conditionMap["value"]
 
 	switch v := value.(type) {
-	case int:
-		// v is an int here, so e.g. v + 1 is possible.
-		fmt.Printf("Integer: %v", v)
-	case float64:
-		// v is a float64 here, so e.g. v + 1.0 is possible.
-		fmt.Printf("Float64: %v", v)
+	case int, float64:
+		condition := &dirule.NumberComparatorCondition{
+			Path:     path.(string),
+			Operator: operation.(string),
+			Value:    value.(float64),
+		}
+		fmt.Printf("Interger/Float64: %v", v)
+		return condition, nil
 	case string:
 		condition := &dirule.StringComparatorCondition{
 			Path:     path.(string),

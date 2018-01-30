@@ -36,7 +36,7 @@ func (exe *ExecuteGatherRules) Execute(rule *dirule.Rule, entityJSON *string) er
 }
 func ProcessRules(entityType *string, entityJSON *string, action Action) error {
 	if rulesInMem == nil {
-		LoadRules()
+		LoadRulesInMem()
 	}
 	rulesForEntityType := rulesInMem[*entityType]
 	for _, rule := range rulesForEntityType {
@@ -51,7 +51,7 @@ func ProcessRules(entityType *string, entityJSON *string, action Action) error {
 	return nil
 }
 
-func LoadRules() error {
+func LoadRulesInMem() error {
 	if rulesInMem == nil {
 		rulesInMem = make(map[string](map[string]dirule.Rule))
 	}
@@ -59,12 +59,7 @@ func LoadRules() error {
 	rules, err := GetRules(nil, selector, nil, nil, nil, nil)
 
 	for _, rule := range rules {
-		rulesPerEntity := rulesInMem[rule.Entity]
-		if rulesPerEntity == nil {
-			rulesPerEntity = make(map[string]dirule.Rule)
-			rulesInMem[rule.Entity] = rulesPerEntity
-		}
-		rulesPerEntity[rule.Name] = rule
+		addRuleInMem(&rule)
 	}
 	println(rules)
 
@@ -72,6 +67,14 @@ func LoadRules() error {
 		return err
 	}
 	return nil
+}
+func addRuleInMem(rule *dirule.Rule) {
+	rulesPerEntity := rulesInMem[rule.Entity]
+	if rulesPerEntity == nil {
+		rulesPerEntity = make(map[string]dirule.Rule)
+		rulesInMem[rule.Entity] = rulesPerEntity
+	}
+	rulesPerEntity[rule.Name] = *rule
 }
 
 func getDoc(jsonDoc []byte) (map[string]interface{}, error) {
@@ -109,7 +112,7 @@ func CreateRule(json []byte) (string, string, error) {
 	}
 
 	// Update Cache
-	rulesInMem[rule.Entity][rule.Name] = rule
+	addRuleInMem(&rule)
 
 	return id, ver, err
 }
@@ -136,7 +139,7 @@ func UpdateRule(id string, rev1 string, json []byte) (string, error) {
 	}
 
 	// Update Cache
-	rulesInMem[rule.Entity][rule.Name] = rule
+	addRuleInMem(&rule)
 
 	return ver, err
 }
