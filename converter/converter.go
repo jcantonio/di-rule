@@ -3,14 +3,14 @@ package converter
 import (
 	"errors"
 
-	dirule "github.com/jcantonio/di-rule"
+	"github.com/jcantonio/di-rule/model"
 )
 
-func GetRule(ruleMap map[string]interface{}) (dirule.Rule, error) {
-	var rule dirule.Rule
+func GetRule(ruleMap map[string]interface{}) (model.Rule, error) {
+	var rule model.Rule
 	name := ruleMap["name"].(string)
 	entity := ruleMap["entity"].(string)
-	actions := []dirule.Action{}
+	actions := []model.Action{}
 
 	conditionMap := ruleMap["condition"]
 
@@ -19,7 +19,7 @@ func GetRule(ruleMap map[string]interface{}) (dirule.Rule, error) {
 		return rule, err
 	}
 
-	rule = dirule.Rule{
+	rule = model.Rule{
 		Name:      name,
 		Entity:    entity,
 		Actions:   actions,
@@ -29,7 +29,7 @@ func GetRule(ruleMap map[string]interface{}) (dirule.Rule, error) {
 	return rule, nil
 }
 
-func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error) {
+func getCondition(conditionMap map[string]interface{}) (model.Condition, error) {
 	operation := conditionMap["op"]
 
 	if operation == nil {
@@ -39,7 +39,7 @@ func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error)
 	// Logical Condition
 	switch operation {
 	case "or", "and":
-		condition := &dirule.LogicalCondition{
+		condition := &model.LogicalCondition{
 			Operator: operation.(string)}
 
 		subconditions := conditionMap["conditions"].([]interface{})
@@ -56,18 +56,27 @@ func getCondition(conditionMap map[string]interface{}) (dirule.Condition, error)
 
 	// Value Condition
 	path := conditionMap["path"]
+
+	if path == nil {
+		return nil, errors.New("No path found")
+	}
+
 	value := conditionMap["value"]
+
+	if value == nil {
+		return nil, errors.New("No value found")
+	}
 
 	switch value.(type) {
 	case int, float64:
-		condition := &dirule.NumberComparatorCondition{
+		condition := &model.NumberComparatorCondition{
 			Path:     path.(string),
 			Operator: operation.(string),
 			Value:    value.(float64),
 		}
 		return condition, nil
 	case string:
-		condition := &dirule.StringComparatorCondition{
+		condition := &model.StringComparatorCondition{
 			Path:     path.(string),
 			Operator: operation.(string),
 			Value:    value.(string),

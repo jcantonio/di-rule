@@ -5,32 +5,32 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	dirule "github.com/jcantonio/di-rule"
 	"github.com/jcantonio/di-rule/converter"
 	"github.com/jcantonio/di-rule/db"
+	"github.com/jcantonio/di-rule/model"
 )
 
-var rulesInMem map[string](map[string]dirule.Rule)
+var rulesInMem map[string](map[string]model.Rule)
 
-type ExecuteRule func(rule *dirule.Rule, entityJSON *string) error
+type ExecuteRule func(rule *model.Rule, entityJSON *string) error
 
 type Action interface {
-	Execute(rule *dirule.Rule, entityJSON *string) error
+	Execute(rule *model.Rule, entityJSON *string) error
 }
 
 type ExecuteActions struct {
 }
 
 type ExecuteGatherRules struct {
-	rules []dirule.Rule
+	rules []model.Rule
 }
 
-func (exe *ExecuteActions) Execute(rule *dirule.Rule, entityJSON *string) error {
+func (exe *ExecuteActions) Execute(rule *model.Rule, entityJSON *string) error {
 	println("PASSED", rule.Name)
 
 	return nil
 }
-func (exe *ExecuteGatherRules) Execute(rule *dirule.Rule, entityJSON *string) error {
+func (exe *ExecuteGatherRules) Execute(rule *model.Rule, entityJSON *string) error {
 	exe.rules = append(exe.rules, *rule)
 	return nil
 }
@@ -53,7 +53,7 @@ func ProcessRules(entityType *string, entityJSON *string, action Action) error {
 
 func LoadRulesInMem() error {
 	if rulesInMem == nil {
-		rulesInMem = make(map[string](map[string]dirule.Rule))
+		rulesInMem = make(map[string](map[string]model.Rule))
 	}
 	selector := `_id > nil`
 	rules, err := GetRules(nil, selector, nil, nil, nil, nil)
@@ -68,10 +68,10 @@ func LoadRulesInMem() error {
 	}
 	return nil
 }
-func addRuleInMem(rule *dirule.Rule) {
+func addRuleInMem(rule *model.Rule) {
 	rulesPerEntity := rulesInMem[rule.Entity]
 	if rulesPerEntity == nil {
-		rulesPerEntity = make(map[string]dirule.Rule)
+		rulesPerEntity = make(map[string]model.Rule)
 		rulesInMem[rule.Entity] = rulesPerEntity
 	}
 	rulesPerEntity[rule.Name] = *rule
@@ -144,7 +144,7 @@ func UpdateRule(id string, rev1 string, json []byte) (string, error) {
 	return ver, err
 }
 
-func GetRules(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]dirule.Rule, error) {
+func GetRules(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]model.Rule, error) {
 
 	var rulesMap []map[string]interface{}
 	var err error
@@ -153,7 +153,7 @@ func GetRules(fields []string, selector string, sorts []string, limit, skip, ind
 	if err != nil {
 		return nil, err
 	}
-	rules := []dirule.Rule{}
+	rules := []model.Rule{}
 	for _, ruleMap := range rulesMap {
 		rule, err := converter.GetRule(ruleMap)
 		if err != nil {

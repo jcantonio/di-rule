@@ -23,7 +23,7 @@ var count int
 /*
 Init runs server to handle requests
 */
-func Init(port int) {
+func Init(port uint) {
 
 	router := mux.NewRouter()
 	//GET

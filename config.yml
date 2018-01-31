@@ -1,0 +1,6 @@
+db:
+    name:     di-rule
+    Address:  "http://localhost"
+    port:     5984
+server:
+    port:     8000
