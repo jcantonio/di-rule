@@ -41,29 +41,28 @@ func Init(port uint) {
 }
 
 func ProcessRules(w http.ResponseWriter, r *http.Request) {
-	//params := mux.Vars(r)
-	//entityType := params["entityType"]
-
-	entityTypes, ok := r.URL.Query()["entityType"]
-
-	if !ok || len(entityTypes) < 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Url Param 'entityType' is missing"))
+	entities, ok := r.URL.Query()["entity"]
+	if !ok || len(entities) < 1 {
+		WriteError(w, "Url Param 'entity' is missing", http.StatusBadRequest)
 		return
 	}
-	// Query()["entityType"] will return an array of items,
+	// Query()["entity"] will return an array of items,
 	// we only want the single item.
-	entityType := entityTypes[0]
+	entity := entities[0]
 
 	var body []byte
 	var err error
 	body, err = ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	entityJSON := string(body)
 	execActions := command.ExecuteActions{}
-	command.ProcessRules(&entityType, &entityJSON, &execActions)
+	command.ProcessRules(&entity, &entityJSON, &execActions)
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
 func GetRules(w http.ResponseWriter, r *http.Request) {
 	/*
@@ -84,28 +83,22 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 
 	selector := `_id > nil`
 
-	jsonResult, err := command.GetRulesAsJSON(nil, selector, nil, nil, nil, nil)
+	rulesMaps, err := command.GetRulesAsMaps(nil, selector, nil, nil, nil, nil)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write(jsonResult)
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
+	WriteSuccess(w, rulesMaps)
 }
 func GetRule(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.String())
 	ruleMap, err := db.GetRule(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json, _ := json.Marshal(ruleMap)
-	w.Write(json)
+	WriteSuccess(w, ruleMap)
 }
 
 func CreateRule(w http.ResponseWriter, r *http.Request) {
@@ -114,19 +107,21 @@ func CreateRule(w http.ResponseWriter, r *http.Request) {
 	var rev string
 	body, err = ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	var id string
 	id, rev, err = command.CreateRule(body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
-	respBody := fmt.Sprintf(`{"_id": "%s","_rev":"%s"}`, id, rev)
-	w.Write([]byte(respBody))
+	data := map[string]interface{}{
+		"_id":  id,
+		"_rev": rev,
+	}
+	WriteSuccess(w, data)
 }
 func UpdateRule(w http.ResponseWriter, r *http.Request) {
 	var body []byte
@@ -136,7 +131,8 @@ func UpdateRule(w http.ResponseWriter, r *http.Request) {
 
 	body, err = ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	id := path.Base(r.URL.String())
 
@@ -144,27 +140,65 @@ func UpdateRule(w http.ResponseWriter, r *http.Request) {
 	rev1 = revResult.String()
 	rev2, err = command.UpdateRule(id, rev1, body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	respBody := fmt.Sprintf(`{"_id": "%s","_rev":"%s"}`, id, rev2)
-	w.Write([]byte(respBody))
+	data := map[string]interface{}{
+		"_id":  id,
+		"_rev": rev2,
+	}
+	WriteSuccess(w, data)
 }
 func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.String())
 	err := db.DeleteRule(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		WriteError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	WriteSuccess(w, nil)
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	count++
-	mu.Unlock()
-	fmt.Fprintf(w, "URL.path = %q\n", r.URL.Path)
+func WriteSuccess(w http.ResponseWriter, data interface{}) {
+	w.WriteHeader(http.StatusOK)
+	response := map[string]interface{}{
+		"status": "success",
+		"data":   data,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		w.Header().Add("Content-Type", "text/plain")
+		// TODO Convert map to bytes
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(responseJSON)
+}
+
+func WriteFail(w http.ResponseWriter, failMessage string) {
+	w.WriteHeader(http.StatusBadRequest)
+	response := map[string]interface{}{
+		"status": "fail",
+		"data":   failMessage,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		w.Header().Add("Content-Type", "text/plain")
+		w.Write([]byte(failMessage))
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(responseJSON)
+}
+func WriteError(w http.ResponseWriter, errorMessage string, status int) {
+	response := map[string]interface{}{
+		"status":  "error",
+		"message": errorMessage,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		w.Header().Add("Content-Type", "text/plain")
+		http.Error(w, errorMessage, status)
+	}
+	w.Header().Add("Content-Type", "application/json")
+	http.Error(w, string(responseJSON), status)
 }

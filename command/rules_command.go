@@ -144,6 +144,9 @@ func UpdateRule(id string, rev1 string, json []byte) (string, error) {
 	return ver, err
 }
 
+func GetRulesAsMaps(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]map[string]interface{}, error) {
+	return db.GetRules(fields, selector, sorts, limit, skip, index)
+}
 func GetRules(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]model.Rule, error) {
 
 	var rulesMap []map[string]interface{}
