@@ -55,8 +55,7 @@ func LoadRulesInMem() error {
 	if rulesInMem == nil {
 		rulesInMem = make(map[string](map[string]model.Rule))
 	}
-	selector := `_id > nil`
-	rules, err := GetRules(nil, selector, nil, nil, nil, nil)
+	rules, _, _, _, _, _, _, _, err := GetRules(nil, 10000, 1)
 
 	for _, rule := range rules {
 		addRuleInMem(&rule)
@@ -144,42 +143,64 @@ func UpdateRule(id string, rev1 string, json []byte) (string, error) {
 	return ver, err
 }
 
-func GetRulesAsMaps(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]map[string]interface{}, error) {
-	return db.GetRules(fields, selector, sorts, limit, skip, index)
+func GetRulesAsMaps(sorts []string, pageSize int, page int) ([]map[string]interface{}, int, int, int, int, int, int, int, error) {
+
+	var selfPage, firstPage, prevPage, nextPage, lastPage, totalPages int
+
+	limit := pageSize
+	skip := pageSize * (page - 1)
+	rulesAsMaps, _, total, err := db.GetRules(sorts, limit, skip)
+
+	totalPages = (total + pageSize - 1) / pageSize
+	selfPage = page
+
+	if totalPages == 0 {
+		firstPage, prevPage, nextPage, lastPage = 0, 0, 0, 0
+	} else if page == 1 {
+		if page >= totalPages {
+			firstPage, prevPage, nextPage, lastPage = 1, 1, 1, totalPages
+		} else {
+			firstPage, prevPage, nextPage, lastPage = 1, 1, 2, totalPages
+		}
+	} else if page >= totalPages {
+		firstPage, prevPage, nextPage, lastPage = 1, page-1, page, totalPages
+	}
+	return rulesAsMaps, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, err
 }
-func GetRules(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]model.Rule, error) {
+func GetRules(sorts []string, pageSize int, page int) ([]model.Rule, int, int, int, int, int, int, int, error) {
 
 	var rulesMap []map[string]interface{}
 	var err error
 
-	rulesMap, err = db.GetRules(fields, selector, sorts, limit, skip, index)
+	var selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total int
+	rulesMap, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, err = GetRulesAsMaps(sorts, pageSize, page)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, 0, 0, 0, 0, 0, err
 	}
 	rules := []model.Rule{}
 	for _, ruleMap := range rulesMap {
 		rule, err := converter.GetRule(ruleMap)
 		if err != nil {
-			return nil, err
+			return nil, 0, 0, 0, 0, 0, 0, 0, err
 		}
 		rules = append(rules, rule)
 	}
-	return rules, nil
+	return rules, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, nil
 }
-func GetRulesAsJSON(fields []string, selector string, sorts []string, limit, skip, index interface{}) ([]byte, error) {
+func GetRulesAsJSON(sorts []string, pageSize int, page int) ([]byte, int, int, int, int, int, int, int, error) {
 
-	var rules []map[string]interface{}
+	var rulesMap []map[string]interface{}
 	var err error
-
-	rules, err = db.GetRules(fields, selector, sorts, limit, skip, index)
+	var selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total int
+	rulesMap, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, err = GetRulesAsMaps(sorts, pageSize, page)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, 0, 0, 0, 0, 0, err
 	}
 
 	var jsonResult []byte
-	jsonResult, err = json.Marshal(rules)
+	jsonResult, err = json.Marshal(rulesMap)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, 0, 0, 0, 0, 0, err
 	}
-	return jsonResult, nil
+	return jsonResult, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, nil
 }

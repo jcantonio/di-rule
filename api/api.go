@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"strconv"
 	"sync"
 
 	"github.com/tidwall/gjson"
@@ -65,31 +66,27 @@ func ProcessRules(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 func GetRules(w http.ResponseWriter, r *http.Request) {
-	/*
-		json.NewEncoder(w).Encode(people)
-	*/
-	/*
-		params := mux.Vars(r)
-		    for _, item := range people {
-		        if item.ID == params["id"] {
-		            json.NewEncoder(w).Encode(item)
-		            return
-		        }
-		    }
-		    json.NewEncoder(w).Encode(&Person{})
-	*/
+	var page, pageSize int
 
-	//fmt.Fprintf(w, "GetRules %s", "to")
-
-	selector := `_id > nil`
-
-	rulesMaps, err := command.GetRulesAsMaps(nil, selector, nil, nil, nil, nil)
+	pages := r.URL.Query()["page"]
+	if len(pages) > 0 {
+		page, _ = strconv.Atoi(pages[0])
+	} else {
+		page = 1
+	}
+	pageSizes := r.URL.Query()["size"]
+	if len(pages) > 0 {
+		pageSize, _ = strconv.Atoi(pageSizes[0])
+	} else {
+		pageSize = 1
+	}
+	rulesMaps, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, err := command.GetRulesAsMaps(nil, pageSize, page)
 	if err != nil {
 		WriteError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	WriteSuccess(w, rulesMaps)
+	WriteListSuccess(w, rulesMaps, "", selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, pageSize)
 }
 func GetRule(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.String())
@@ -165,6 +162,31 @@ func WriteSuccess(w http.ResponseWriter, data interface{}) {
 	response := map[string]interface{}{
 		"status": "success",
 		"data":   data,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		w.Header().Add("Content-Type", "text/plain")
+		// TODO Convert map to bytes
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(responseJSON)
+}
+func WriteListSuccess(w http.ResponseWriter, data interface{}, urlWithFilter string, selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, pageSize int) {
+
+	w.WriteHeader(http.StatusOK)
+	response := map[string]interface{}{
+		"status": "success",
+		"data":   data,
+		"meta": map[string]interface{}{
+			"total-pages": totalPages,
+		},
+		"links": map[string]interface{}{
+			"self":  fmt.Sprintf("%s?page[number]=%d&page[size]=%d", urlWithFilter, selfPage, pageSize),
+			"first": fmt.Sprintf("%s?page[number]=%d&page[size]=%d", urlWithFilter, firstPage, pageSize),
+			"prev":  fmt.Sprintf("%s?page[number]=%d&page[size]=%d", urlWithFilter, prevPage, pageSize),
+			"next":  fmt.Sprintf("%s?page[number]=%d&page[size]=%d", urlWithFilter, nextPage, pageSize),
+			"last":  fmt.Sprintf("%s?page[number]=%d&page[size]=%d", urlWithFilter, lastPage, pageSize),
+		},
 	}
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
