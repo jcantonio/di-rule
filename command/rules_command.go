@@ -27,7 +27,6 @@ type ExecuteGatherRules struct {
 
 func (exe *ExecuteActions) Execute(rule *model.Rule, entityJSON *string) error {
 	println("PASSED", rule.Name)
-
 	return nil
 }
 func (exe *ExecuteGatherRules) Execute(rule *model.Rule, entityJSON *string) error {
@@ -51,6 +50,29 @@ func ProcessRules(entityType *string, entityJSON *string, action Action) error {
 	return nil
 }
 
+/*
+InitDatabase initialise the db. create it if does not exist and load in memory Rules
+*/
+func InitDatabase(url string, dbname string) {
+	exitCode := 1
+	db.InitServer(url, exitCode)
+	db.InitDB(dbname, exitCode)
+	//create view if does not exist
+	viewId := "_design/rules"
+	view, _ := db.GetDocument(viewId)
+	if view == nil {
+		view = map[string]interface{}{
+			"language": "javascript",
+			"views": map[string]interface{}{
+				"all": map[string]interface{}{
+					"map": "function(doc) { emit(doc._id, doc)}",
+				},
+			},
+		}
+		db.CreateDocument(viewId, view)
+	}
+}
+
 func LoadRulesInMem() error {
 	if rulesInMem == nil {
 		rulesInMem = make(map[string](map[string]model.Rule))
@@ -60,7 +82,6 @@ func LoadRulesInMem() error {
 	for _, rule := range rules {
 		addRuleInMem(&rule)
 	}
-	println(rules)
 
 	if err != nil {
 		return err
@@ -104,7 +125,7 @@ func CreateRule(json []byte) (string, string, error) {
 		return "", "", err
 	}
 	// Store
-	ver, err := db.CreateRule(id, doc)
+	ver, err := db.CreateDocument(id, doc)
 
 	if err != nil {
 		return "", "", err
@@ -131,7 +152,7 @@ func UpdateRule(id string, rev1 string, json []byte) (string, error) {
 		return "", err
 	}
 	// Store
-	ver, err := db.UpdateRule(id, doc)
+	ver, err := db.UpdateDocument(id, doc)
 
 	if err != nil {
 		return "", err
@@ -149,7 +170,7 @@ func GetRulesAsMaps(sorts []string, pageSize int, page int) ([]map[string]interf
 
 	limit := pageSize
 	skip := pageSize * (page - 1)
-	rulesAsMaps, _, total, err := db.GetRules(sorts, limit, skip)
+	rulesAsMaps, _, total, err := db.GetDocuments(sorts, limit, skip)
 
 	totalPages = (total + pageSize - 1) / pageSize
 	selfPage = page

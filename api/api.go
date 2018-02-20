@@ -27,9 +27,6 @@ Init runs server to handle requests
 func Init(port uint) {
 
 	router := mux.NewRouter()
-	//GET
-	//http.HandleFunc("/rules", handler)
-	//http.HandleFunc("/", handler)
 
 	router.HandleFunc("/processes/run", ProcessRules).Methods("POST")
 	router.HandleFunc("/rules", GetRules).Methods("GET")
@@ -85,12 +82,11 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	WriteListSuccess(w, rulesMaps, "", selfPage, firstPage, prevPage, nextPage, lastPage, totalPages, total, pageSize)
 }
 func GetRule(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.String())
-	ruleMap, err := db.GetRule(id)
+	ruleMap, err := db.GetDocument(id)
 	if err != nil {
 		WriteError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -149,7 +145,7 @@ func UpdateRule(w http.ResponseWriter, r *http.Request) {
 }
 func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.String())
-	err := db.DeleteRule(id)
+	err := db.DeleteDocument(id)
 	if err != nil {
 		WriteError(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -2,6 +2,8 @@ package db
 
 import (
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 var jsonStr1 = `{
@@ -53,39 +55,36 @@ var jsonStr2 = `{
 }`
 
 func TestCRUD(t *testing.T) {
-	InitDatabase("http://localhost:5984", "di-rule")
-	id, rev, err := CreateRule([]byte(jsonStr1))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	rev, err = UpdateRule(id, rev, []byte(jsonStr2))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var rule map[string]interface{}
-	rule, err = GetRule(id)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	println(rule)
-	/*
-		{
-		    "selector": {
-		        "year": {"$gt": 2010}
-		    },
-		    "fields": ["_id", "_rev", "year", "title"],
-		    "sort": [{"year": "asc"}],
-		    "limit": 2,
-		    "skip": 0
-		}
-	*/
+	InitDB("di-rule", 1)
+	id := uuid.New().String()
 
-	selector := `entity == "CUSTOMER"`
+	doc := map[string]interface{}{
+		"name": "nameA",
+	}
+
+	rev, err := CreateDocument(id, doc)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	doc = map[string]interface{}{
+		"_id":  id,
+		"name": "nameB",
+	}
+	rev, err = UpdateDocument(rev, doc)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = GetDocument(id)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	var rules []map[string]interface{}
-	rules, err = GetRules(nil, selector, nil, nil, nil, nil)
+	rules, _, _, err = GetDocuments(nil, 1, 1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -94,5 +93,5 @@ func TestCRUD(t *testing.T) {
 		t.Log(rule)
 	}
 
-	DeleteRule(id)
+	DeleteDocument(id)
 }

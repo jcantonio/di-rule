@@ -14,25 +14,15 @@ var (
 	diRuleDB *couchdb.Database
 )
 
-/*
-InitDatabase initialise the db. create it if does not exist and load in memory Rules
-*/
-func InitDatabase(url string, dbname string) {
-	exitCode := 1
-	initServer(url, exitCode)
-	initDB(dbname, exitCode)
-}
-
-func initServer(url string, exitCode int) {
+func InitServer(url string, exitCode int) {
 	var err error
 	serverDB, err = couchdb.NewServer(url)
 	if err != nil {
 		os.Exit(exitCode)
 	}
-	serverDB.Version()
 }
 
-func initDB(name string, exitCode int) {
+func InitDB(name string, exitCode int) {
 	var err error
 	diRuleDB, err = serverDB.Get(name)
 	if err != nil {
@@ -49,34 +39,34 @@ func initDB(name string, exitCode int) {
 }
 
 /*
-CreateRule stores a rule in db
+CreateDocument stores a rule in db
 */
-func CreateRule(id string, doc map[string]interface{}) (string, error) {
+func CreateDocument(id string, doc map[string]interface{}) (string, error) {
 	err := diRuleDB.Set(id, doc)
 	rev := doc["_rev"].(string)
 	return rev, err
 }
 
 /*
-UpdateRule updates a rule in db
+UpdateDocument updates a rule in db
 */
-func UpdateRule(id string, doc map[string]interface{}) (string, error) {
+func UpdateDocument(id string, doc map[string]interface{}) (string, error) {
 	err := diRuleDB.Set(id, doc)
 	rev2 := doc["_rev"].(string)
 	return rev2, err
 }
 
 /*
-DeleteRule deletes a rule from db
+DeleteDocument deletes a rule from db
 */
-func DeleteRule(id string) error {
+func DeleteDocument(id string) error {
 	return diRuleDB.Delete(id)
 }
 
 /*
-GetRule get rule from db
+GetDocuments get rule from db
 */
-func GetRules(sorts []string, limit, skip int) ([]map[string]interface{}, int, int, error) {
+func GetDocuments(sorts []string, limit, skip int) ([]map[string]interface{}, int, int, error) {
 
 	option := map[string]interface{}{"limit": limit, "skip": skip} //"descending": true,
 
@@ -145,8 +135,8 @@ func min(a, b int) int {
 }
 
 /*
-GetRules get rules from db
+GetDocument get rules from db
 */
-func GetRule(id string) (map[string]interface{}, error) {
+func GetDocument(id string) (map[string]interface{}, error) {
 	return diRuleDB.Get(id, nil)
 }

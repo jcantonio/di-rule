@@ -5,7 +5,6 @@ import (
 
 	"github.com/jcantonio/di-rule/api"
 	"github.com/jcantonio/di-rule/command"
-	"github.com/jcantonio/di-rule/db"
 	"github.com/jinzhu/configor"
 )
 
@@ -29,7 +28,7 @@ func main() {
 	}
 	dbURL := fmt.Sprintf("%s:%d", Config.DB.Address, Config.DB.Port)
 	fmt.Printf("Init DB %s \n", dbURL)
-	db.InitDatabase(dbURL, Config.DB.Name)
+	command.InitDatabase(dbURL, Config.DB.Name)
 	command.LoadRulesInMem()
 	fmt.Printf("Start server on port %d\n", Config.Server.Port)
 	api.Init(Config.Server.Port)
