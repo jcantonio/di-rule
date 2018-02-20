@@ -37,6 +37,7 @@ type Condition interface {
 Rule compare
 */
 type Rule struct {
+	ID        string
 	Name      string
 	Entity    string
 	Condition Condition

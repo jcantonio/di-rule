@@ -10,7 +10,7 @@ import (
 	"github.com/jcantonio/di-rule/model"
 )
 
-var rulesInMem map[string](map[string]model.Rule)
+var rulesInMem map[string](map[string]model.Rule) = make(map[string](map[string]model.Rule))
 
 type ExecuteRule func(rule *model.Rule, entityJSON *string) error
 
@@ -74,9 +74,6 @@ func InitDatabase(url string, dbname string) {
 }
 
 func LoadRulesInMem() error {
-	if rulesInMem == nil {
-		rulesInMem = make(map[string](map[string]model.Rule))
-	}
 	rules, _, _, _, _, _, _, _, err := GetRules(nil, 10000, 1)
 
 	for _, rule := range rules {
@@ -89,12 +86,22 @@ func LoadRulesInMem() error {
 	return nil
 }
 func addRuleInMem(rule *model.Rule) {
+	if rulesInMem == nil {
+		rulesInMem = make(map[string](map[string]model.Rule))
+	}
 	rulesPerEntity := rulesInMem[rule.Entity]
 	if rulesPerEntity == nil {
 		rulesPerEntity = make(map[string]model.Rule)
 		rulesInMem[rule.Entity] = rulesPerEntity
 	}
-	rulesPerEntity[rule.Name] = *rule
+	rulesPerEntity[rule.ID] = *rule
+}
+
+func removeRuleFromMem(entity, ruleId string) {
+	rulesPerEntity := rulesInMem[entity]
+	if rulesPerEntity != nil {
+		delete(rulesPerEntity, ruleId)
+	}
 }
 
 func getDoc(jsonDoc []byte) (map[string]interface{}, error) {
@@ -117,7 +124,7 @@ func CreateRule(json []byte) (string, string, error) {
 	}
 
 	id := uuid.New().String()
-
+	doc["_id"] = id
 	//create and Validate Rule
 	rule, err := converter.GetRule(doc)
 
@@ -163,7 +170,16 @@ func UpdateRule(id string, rev1 string, json []byte) (string, error) {
 
 	return ver, err
 }
-
+func DeleteRule(id string) error {
+	ruleMap, err := db.GetDocument(id)
+	if err != nil {
+		return err
+	}
+	db.DeleteDocument(id)
+	entity := ruleMap["entity"]
+	removeRuleFromMem(entity.(string), id)
+	return nil
+}
 func GetRulesAsMaps(sorts []string, pageSize int, page int) ([]map[string]interface{}, int, int, int, int, int, int, int, error) {
 
 	var selfPage, firstPage, prevPage, nextPage, lastPage, totalPages int

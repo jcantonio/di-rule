@@ -18,8 +18,14 @@ func GetRule(ruleMap map[string]interface{}) (model.Rule, error) {
 	if err != nil {
 		return rule, err
 	}
+	var id string
+	idInterface := ruleMap["_id"]
+	if idInterface != nil {
+		id = idInterface.(string)
+	}
 
 	rule = model.Rule{
+		ID:        id,
 		Name:      name,
 		Entity:    entity,
 		Actions:   actions,
