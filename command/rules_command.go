@@ -33,7 +33,8 @@ func (exe *ExecuteGatherRules) Execute(rule *model.Rule, entityJSON *string) err
 	exe.rules = append(exe.rules, *rule)
 	return nil
 }
-func ProcessRules(entityType *string, entityJSON *string, action Action) error {
+func ProcessRules(entityType *string, entityJSON *string) ([]interface{}, error) {
+	var rulesMet []interface{}
 	if rulesInMem == nil {
 		LoadRulesInMem()
 	}
@@ -41,13 +42,18 @@ func ProcessRules(entityType *string, entityJSON *string, action Action) error {
 	for _, rule := range rulesForEntityType {
 		conditionIsMet, err := rule.Condition.IsMet(entityJSON)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if conditionIsMet {
-			action.Execute(&rule, entityJSON)
+			ruleMet := map[string]interface{}{
+				"id":      rule.ID,
+				"name":    rule.Name,
+				"actions": rule.Actions,
+			}
+			rulesMet = append(rulesMet, ruleMet)
 		}
 	}
-	return nil
+	return rulesMet, nil
 }
 
 /*

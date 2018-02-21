@@ -27,20 +27,6 @@ func TestLoadRules(t *testing.T) {
 
 func TestRuleCRUD(t *testing.T) {
 	InitDatabase("http://localhost:5984", "di-rule")
-	/*rule := map[string]interface{}{
-		"entity":      "CUSTOMER",
-		"description": "description",
-		"name":        "aname",
-		"action": map[string]interface{}{
-			"name": "DOTHIS",
-		},
-		"condition": map[string]interface{}{
-			"op":    "=",
-			"path":  "aPath",
-			"value": "avalue",
-		},
-	}*/
-
 	ruleJSON := `{
 		"action": [
 		  {

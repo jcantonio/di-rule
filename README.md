@@ -15,9 +15,58 @@ Value Comparator Conditions are Value comparators with
 
 Input json entity
 
+## Get di-rule
+Get dependencies
+```bash
+go get -u github.com/tidwall/gjson
+go get -u github.com/jcantonio/couchdb-golang
+```
+Get di-rule
 ```bash
 go get -u github.com/jcantonio/di-rule
 ```
+## REST API
+### Start server
+Create a file config.yml
+```
+db:
+    name:     di-rule
+    Address:  "http://localhost"
+    port:     5984
+server:
+    port:     8000
+```
+Start server.
+
+### Create Rule
+```
+POST http://localhost:8000/rules 
+{
+    "name": "R3",
+    "entity": "CUSTOMER",
+    "description": "R3 checks if the shipment is to go to the US or FR",
+    	"actions": [{
+		"name": "DoThat"
+	}],
+    "condition": {
+        "op": "or",
+        "conditions": [
+            {
+                "path": "shipTo.countryCode",
+                "op": "=",
+                "value": "FR"
+            },
+            {
+                "path": "shipTo.countryCode",
+                "op": "=",
+                "value": "US"
+            }
+        ]
+    }
+}
+```
+## Golang API
+To fill
 
 ## Roadmap
 * string comparator: equal        	- DONE
@@ -33,5 +82,5 @@ go get -u github.com/jcantonio/di-rule
 * date comparator: greater        
 * date comparator: less        	
 * compare when changes
-* REST : Add Rule in CouchDB	  	- PART 
-* REST : Execute Rule				- PART
+* REST : Add Rule in CouchDB	  	- DONE 
+* REST : Execute Rule				- DONE

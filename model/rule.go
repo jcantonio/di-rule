@@ -41,14 +41,14 @@ type Rule struct {
 	Name      string
 	Entity    string
 	Condition Condition
-	Actions   []Action
+	Actions   interface{}
 }
 
 /*
 Action TBD
 */
 type Action struct {
-	Name string
+	JSON string
 }
 
 /*

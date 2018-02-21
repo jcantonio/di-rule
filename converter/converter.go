@@ -10,7 +10,7 @@ func GetRule(ruleMap map[string]interface{}) (model.Rule, error) {
 	var rule model.Rule
 	name := ruleMap["name"].(string)
 	entity := ruleMap["entity"].(string)
-	actions := []model.Action{}
+	actions := ruleMap["actions"]
 
 	conditionMap := ruleMap["condition"]
 

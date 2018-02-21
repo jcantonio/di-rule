@@ -56,11 +56,10 @@ func ProcessRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entityJSON := string(body)
-	execActions := command.ExecuteActions{}
-	command.ProcessRules(&entity, &entityJSON, &execActions)
+	var rulesMet []interface{}
+	rulesMet, err = command.ProcessRules(&entity, &entityJSON)
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	WriteSuccess(w, rulesMet)
 }
 func GetRules(w http.ResponseWriter, r *http.Request) {
 	var page, pageSize int
@@ -145,7 +144,7 @@ func UpdateRule(w http.ResponseWriter, r *http.Request) {
 }
 func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	id := path.Base(r.URL.String())
-	err := db.DeleteDocument(id)
+	err := command.DeleteRule(id)
 	if err != nil {
 		WriteError(w, err.Error(), http.StatusInternalServerError)
 		return
