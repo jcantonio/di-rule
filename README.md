@@ -76,14 +76,13 @@ POST http://localhost:8000/rules
         ]
     }
 }
-```
+```  
 
-
-response
+response  
 ```
 {"data":{"_id":%ruleID%,"_rev":%revision%},"status":"success"}
-```
-for example
+```  
+for example  
 ```
 {"data":{"_id":"2f8198bb-7b02-4c08-9c9f-9ba02680a416","_rev":"1-c7809e5a70f4b1fb313b21df966f1eff"},"status":"success"}
 ```
@@ -144,6 +143,12 @@ POST http://localhost:8000/processes/run?entity=CUSTOMER
 				 "countryCode"   : "FR" }
   }
 ```
+
+### Get Rule
+GET http://localhost:8000/rules/%ruleID% 
+
+### Get Rules
+GET http://localhost:8000/rules??size=10&page=1
 
 ## Golang API
 To fill
