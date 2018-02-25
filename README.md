@@ -26,6 +26,9 @@ Get di-rule
 go get -u github.com/jcantonio/di-rule
 ```
 ## REST API
+Requires CouchDB  
+http://couchdb.apache.org/
+
 ### Start server
 Create a file config.yml
 ```
